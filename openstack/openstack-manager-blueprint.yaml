@@ -7,6 +7,10 @@ imports:
 
 
 inputs:
+  nameserver:
+    default: ''
+    type: string
+
   keystone_username:
     default: ''
     type: string
@@ -283,7 +287,7 @@ node_templates:
             preconfigure:
               implementation: fabric.fabric_plugin.tasks.run_script
               inputs:
-                script_path: https://raw.githubusercontent.com/cloudify-cosmo/cloudify-manager/master/resources/rest-service/cloudify/fs/fdisk.sh
+                script_path: https://raw.githubusercontent.com/szpotona/cloudify-manager-blueprints/centos/openstack/scripts/fdisk-piston.sh
                 device_name: { get_attribute: [TARGET, device_name] }
                 fabric_env:
                   user: { get_input: manager_server_user }
@@ -435,6 +439,7 @@ node_templates:
             task_name: configure
             task_properties:
               openstack_config: { get_property: [openstack_configuration, openstack_config] }
+              nameserver: { get_input: nameserver }
             fabric_env:
               user: { get_input: manager_server_user }
               key_filename: { get_property: [management_keypair, private_key_path] }
