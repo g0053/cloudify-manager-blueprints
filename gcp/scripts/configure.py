@@ -19,14 +19,18 @@ from cloudify import ctx
 from gcp.compute import constants
 
 
-GCP_DEFAULT_CONFIG_PATH = '/home/ubuntu/gcp_config.json'
-
-
-def configure_manager(manager_config_path=GCP_DEFAULT_CONFIG_PATH,
-                      gcp_config=None):
-    auth = gcp_config.get('auth')
+def configure_manager(manager_config_path=None, gcp_config=None):
+    user = ctx.node.properties['cloudify']['cloudify_agent']['user']
+    manager_config_path = manager_config_path or get_remote_config_path(user)
+    auth = gcp_config.get(constants.AUTH)
     if auth and os.path.isfile(auth):
         fabric.api.put(auth, manager_config_path)
+    resources = _construct_resources(gcp_config)
+    provider = {'resources': resources}
+    ctx.instance.runtime_properties['provider_context'] = provider
+
+
+def _construct_resources(gcp_config):
     node_instances = ctx._endpoint.storage.get_node_instances()
     resources = {}
     for node_instance in node_instances:
@@ -35,7 +39,18 @@ def configure_manager(manager_config_path=GCP_DEFAULT_CONFIG_PATH,
             resources[node_instance.node_id] = {
                 'id': run_props[constants.NAME],
                 constants.TARGET_TAGS: run_props[constants.TARGET_TAGS],
-                constants.SOURCE_TAGS: run_props[constants.SOURCE_TAGS]}
-    resources[constants.GCP_CONFIG] = manager_config_path
-    provider = {'resources': resources}
-    ctx.instance.runtime_properties['provider_context'] = provider
+                constants.SOURCE_TAGS: run_props[constants.SOURCE_TAGS]
+            }
+
+    resources[constants.GCP_CONFIG] = {
+        constants.AUTH: constants.GCP_DEFAULT_CONFIG_PATH,
+        constants.PROJECT: gcp_config[constants.PROJECT],
+        constants.ZONE: gcp_config[constants.ZONE],
+        constants.NETWORK: gcp_config[constants.NETWORK],
+    }
+
+    return resources
+
+
+def get_remote_config_path(user):
+    return os.path.join(os.sep, 'home', user, 'gcp_config.json')
