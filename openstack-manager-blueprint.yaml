@@ -3,8 +3,8 @@ tosca_definitions_version: cloudify_dsl_1_3
 imports:
   - http://www.getcloudify.org/spec/cloudify/3.4/types.yaml
   - http://www.getcloudify.org/spec/fabric-plugin/1.4.1/plugin.yaml
-  - http://www.getcloudify.org/spec/openstack-plugin/1.4/plugin.yaml
   - types/manager-types.yaml
+  - https://raw.githubusercontent.com/szpotona/cloudify-openstack-plugin/no-management-network/plugin.yaml
 
 
 
@@ -751,9 +751,9 @@ node_templates:
         description: Security group for Cloudify agent VMs
       rules:
         - port: 22
-          remote_ip_prefix: { get_property: [management_subnet, subnet, cidr] }
+          remote_ip_prefix: 0.0.0.0/0
         - port: 5985
-          remote_ip_prefix: { get_property: [management_subnet, subnet, cidr] }
+          remote_ip_prefix: 0.0.0.0/0
       openstack_config: *openstack_configuration
 
   management_security_group:
@@ -770,11 +770,17 @@ node_templates:
         - port: 22
           remote_ip_prefix: 0.0.0.0/0
         - port: 8101
-          remote_ip_prefix: { get_property: [management_subnet, subnet, cidr] }
+          remote_ip_prefix: 0.0.0.0/0
         - port: 5672
-          remote_ip_prefix: { get_property: [management_subnet, subnet, cidr] }
+          remote_ip_prefix: 0.0.0.0/0
         - port: 53229
-          remote_ip_prefix: { get_property: [management_subnet, subnet, cidr] }
+          remote_ip_prefix: 0.0.0.0/0
+        - port: 8086
+          remote_ip_prefix: 0.0.0.0/0
+        - port: 9200
+          remote_ip_prefix: 0.0.0.0/0
+        - port: 8080
+          remote_ip_prefix: 0.0.0.0/0
       openstack_config: *openstack_configuration
 
   manager_server_ip:
@@ -787,6 +793,7 @@ node_templates:
   manager_host:
     type: cloudify.openstack.nodes.Server
     properties:
+      use_management_network: false
       resource_id: { get_input: manager_server_name }
       install_agent: false
       server:
